@@ -1,3 +1,7 @@
 source 'https://rubygems.org'
-gem 'openflow-protocol', '0.0.3'
+gem 'bindata'
+gem 'bindata-contrib', '0.0.2'
+gem 'packet-protocols', '0.0.4'
+gem 'openflow-protocol', '0.0.5'
 gem 'rspec'
+gem 'gli'

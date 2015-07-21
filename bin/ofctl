@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+require 'gli'
+require_relative '../lib/controller'
+
+module CommandLine
+  extend GLI::App
+
+  program_desc 'OpenFlow Controller command-line tool'
+
+  desc 'Runs an OpenFlow Controller'
+  arg_name 'controller', optional: false
+  command :run do |c|
+    c.flag :ip,
+      desc: 'IP Address',
+      must_match: /\d+\.\d+\.\d+\.\d+/,
+      required: false,
+      default_value: OFController::DEFAULT_IP_ADDRESS
+    c.flag :port,
+      desc: 'Port Number',
+      type: Integer,
+      required: false,
+      default_value: OFController::DEFAULT_TCP_PORT
+    c.switch :debug,
+      desc: 'Run in Debug Mode',
+      default_value: false
+
+    c.action do |_global_options, options, args|
+      load args.first
+      controller = if options[:debug]
+                     OFController.create(Logger::DEBUG)
+                   else
+                     OFController.create
+                   end
+      controller.run options[:ip], options[:port], args[1..-1]
+    end
+  end
+
+  default_command :help
+
+  exit run(ARGV)
+end
