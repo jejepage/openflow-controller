@@ -101,6 +101,7 @@ class OFController
     loop { handle_openflow_message(datapath_id) }
   rescue => exception
     logger.debug "Switch #{datapath_id} error: #{exception}."
+    logger.debug exception.backtrace
     unregister_switch(datapath_id)
   end
 
