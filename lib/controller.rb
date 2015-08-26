@@ -53,6 +53,7 @@ class OFController
 
   def start(*_args) end
   def switch_ready(_datapath_id) end
+  def error(_datapath_id, _msg) end
   def echo_request(datapath_id, msg)
     send_message datapath_id, OFEchoReply.new(xid: msg.xid)
   end
@@ -115,6 +116,8 @@ class OFController
     msg = @switches.fetch(datapath_id).receive
 
     case msg
+    when OFError
+      maybe_send_handler :error, datapath_id, msg
     when OFEchoRequest
       maybe_send_handler :echo_request, datapath_id, msg
     when OFFeaturesReply
