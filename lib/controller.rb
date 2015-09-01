@@ -42,6 +42,7 @@ class OFController
   def run(ip, port, *args)
     maybe_send_handler :start, *args
     socket = TCPServer.open(ip, port)
+    socket.setsockopt(:SOCKET, :REUSEADDR, true)
     logger.info "Controller running on #{ip}:#{port}."
     start_timers
     loop { start_switch_thread socket.accept }
