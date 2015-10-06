@@ -31,6 +31,7 @@ class OFController
 
   def initialize(level = Logger::INFO)
     @switches = {}
+    @messages = {}
     @logger = Logger.new($stdout).tap do |logger|
       logger.formatter = proc do |severity, datetime, _progname, msg|
         "#{datetime} (#{severity}) -- #{msg}\n"
@@ -48,12 +49,41 @@ class OFController
     loop { start_switch_thread socket.accept }
   end
 
-  def send_message(datapath_id, msg)
-    @switches.fetch(datapath_id).send(msg)
+  def datapath_ids
+    @switches.keys
+  end
+
+  def send_message(datapath_id, msg = nil)
+    if msg.nil?
+      msg         = datapath_id
+      datapath_id = datapath_ids.first
+    end
+    @switches.fetch(datapath_id.to_s).send(msg)
+  end
+
+  def broadcast(msg)
+    datapath_ids.each { |did| send_message did, msg }
+  end
+
+  def messages_for(datapath_id)
+    @messages.fetch(datapath_id.to_s)
+  end
+
+  def last_message_for(datapath_id)
+    messages_for(datapath_id).last
+  end
+
+  def messages
+    messages_for datapath_ids.first
+  end
+
+  def last_message
+    messages.last
   end
 
   def start(*_args) end
   def switch_ready(_datapath_id) end
+  def message_received(_datapath_id, _msg) end
   def error(_datapath_id, _msg) end
   def echo_request(datapath_id, msg)
     send_message datapath_id, OFEchoReply.new(xid: msg.xid)
@@ -94,7 +124,8 @@ class OFController
 
   def create_and_register_new_switch(socket)
     switch = OFSwitch.new(self, socket)
-    @switches[switch.datapath_id] = switch
+    @messages[switch.datapath_id.to_s] = []
+    @switches[switch.datapath_id.to_s] = switch
   end
 
   def start_switch_main(datapath_id)
@@ -108,13 +139,20 @@ class OFController
   end
 
   def unregister_switch(datapath_id)
-    @switches.delete(datapath_id)
+    @messages.delete(datapath_id.to_s)
+    @switches.delete(datapath_id.to_s)
     logger.info "Switch #{datapath_id} is disconnected."
     maybe_send_handler :switch_disconnected, datapath_id
   end
 
   def handle_openflow_message(datapath_id)
-    msg = @switches.fetch(datapath_id).receive
+    msg = @switches.fetch(datapath_id.to_s).receive
+
+    unless msg.class == OFEchoRequest
+      logger.debug "Switch #{datapath_id} received #{msg.type} message."
+      @messages[datapath_id.to_s] << msg
+      maybe_send_handler :message_received, datapath_id, msg
+    end
 
     case msg
     when OFError

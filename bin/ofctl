@@ -1,6 +1,21 @@
 #!/usr/bin/env ruby
 require 'gli'
+require 'readline'
 require_relative '../lib/controller'
+
+PROMPT = '> '
+
+def run_console(controller, ip, port, *args)
+  Thread.new { controller.run ip, port, args }
+
+  loop do
+    begin
+      puts " => #{eval(Readline.readline(PROMPT, true)).inspect}"
+    rescue StandardError => e
+      puts "#{e.class}: #{e.message}"
+    end
+  end
+end
 
 module CommandLine
   extend GLI::App
@@ -32,6 +47,41 @@ module CommandLine
                      OFController.create
                    end
       controller.run options[:ip], options[:port], args[1..-1]
+    end
+  end
+
+  desc 'Runs a Simple OpenFlow Controller with REPL'
+  command :console do |c|
+    c.flag :ip,
+      desc: 'IP Address',
+      must_match: /\d+\.\d+\.\d+\.\d+/,
+      required: false,
+      default_value: OFController::DEFAULT_IP_ADDRESS
+    c.flag :port,
+      desc: 'Port Number',
+      type: Integer,
+      required: false,
+      default_value: OFController::DEFAULT_TCP_PORT
+    c.switch :debug,
+      desc: 'Run in Debug Mode',
+      default_value: false
+
+    c.action do |_global_options, options, args|
+      controller = if options[:debug]
+                     OFController.new(Logger::DEBUG)
+                   else
+                     OFController.new
+                   end
+
+      prompt = '> '
+      controller.logger.formatter = proc do |severity, datetime, _progname, msg|
+        buf = PROMPT + Readline::line_buffer
+        "\r" + ' ' * buf.length + "\r" +
+        "#{datetime} (#{severity}) -- #{msg}\n" +
+        buf
+      end
+
+      run_console controller, options[:ip], options[:port], args
     end
   end
 
