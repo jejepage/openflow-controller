@@ -1,91 +1,62 @@
 #!/usr/bin/env ruby
-require 'gli'
+require 'cri'
 require 'readline'
 require_relative '../lib/controller'
 
 PROMPT = '> '
 
-def run_console(controller, ip, port, *args)
-  Thread.new { controller.run ip, port, args }
+command = Cri::Command.define do
+  name        'ofctl'
+  usage       'ofctl [options] [args]'
+  summary     'OpenFlow Controller command-line tool'
+  description 'OpenFlow Controller command-line tool'
 
-  loop do
-    begin
-      puts " => #{eval(Readline.readline(PROMPT, true)).inspect}"
-    rescue StandardError => e
-      puts "#{e.class}: #{e.message}"
-    end
+  flag :h, :help, 'show help for this command' do |value, cmd|
+    puts cmd.help
+    exit 0
   end
-end
+  flag :d, :debug, 'run controller in debug mode'
 
-module CommandLine
-  extend GLI::App
+  option :i, :ip,         'IP address of the controller',  argument: :optional
+  option :p, :port,       'port number of the controller', argument: :optional
+  option :c, :controller, 'custom controller file',        argument: :optional
 
-  program_desc 'OpenFlow Controller command-line tool'
+  run do |opts, args, _cmd|
+    load opts[:controller] unless opts[:controller].nil?
 
-  desc 'Runs an OpenFlow Controller'
-  arg_name 'controller', optional: false
-  command :run do |c|
-    c.flag :ip,
-      desc: 'IP Address',
-      must_match: /\d+\.\d+\.\d+\.\d+/,
-      required: false,
-      default_value: OFController::DEFAULT_IP_ADDRESS
-    c.flag :port,
-      desc: 'Port Number',
-      type: Integer,
-      required: false,
-      default_value: OFController::DEFAULT_TCP_PORT
-    c.switch :debug,
-      desc: 'Run in Debug Mode',
-      default_value: false
+    debug = opts[:debug] || false
 
-    c.action do |_global_options, options, args|
-      load args.first
-      controller = if options[:debug]
-                     OFController.create(Logger::DEBUG)
-                   else
-                     OFController.create
-                   end
-      controller.run options[:ip], options[:port], args[1..-1]
+    ctl = OFController.create(debug)
+
+    init_form = ctl.logger.formatter
+    ctl.logger.formatter = proc do |severity, datetime, progname, msg|
+      buf = PROMPT + Readline::line_buffer
+      "\r" + ' ' * buf.length + "\r" +
+      init_form.call(severity, datetime, progname, msg).blue +
+      buf
     end
-  end
 
-  desc 'Runs a Simple OpenFlow Controller with REPL'
-  command :console do |c|
-    c.flag :ip,
-      desc: 'IP Address',
-      must_match: /\d+\.\d+\.\d+\.\d+/,
-      required: false,
-      default_value: OFController::DEFAULT_IP_ADDRESS
-    c.flag :port,
-      desc: 'Port Number',
-      type: Integer,
-      required: false,
-      default_value: OFController::DEFAULT_TCP_PORT
-    c.switch :debug,
-      desc: 'Run in Debug Mode',
-      default_value: false
+    ip   = opts[:ip]   || OFController::DEFAULT_IP_ADDRESS
+    port = opts[:port] || OFController::DEFAULT_TCP_PORT
 
-    c.action do |_global_options, options, args|
-      controller = if options[:debug]
-                     OFController.new(Logger::DEBUG)
-                   else
-                     OFController.new
-                   end
-
-      prompt = '> '
-      controller.logger.formatter = proc do |severity, datetime, _progname, msg|
-        buf = PROMPT + Readline::line_buffer
-        "\r" + ' ' * buf.length + "\r" +
-        "#{datetime} (#{severity}) -- #{msg}\n" +
-        buf
+    Thread.abort_on_exception = true
+    Thread.new do
+      begin
+        ctl.run ip, port, args
+      rescue StandardError => e
+        puts "#{e.class}: #{e.message}".red
+        exit 1
       end
+    end
 
-      run_console controller, options[:ip], options[:port], args
+    loop do
+      begin
+        puts " => #{eval(Readline.readline(PROMPT, true)).inspect}".green
+      rescue StandardError => e
+        puts "#{e.class}: #{e.message}".red
+      end
     end
   end
-
-  default_command :help
-
-  exit run(ARGV)
 end
+
+command.run(ARGV)

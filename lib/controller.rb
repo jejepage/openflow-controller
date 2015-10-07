@@ -15,7 +15,7 @@ class OFController
   end
 
   def self.create(*args)
-    @controller_class.new(*args)
+    (@controller_class || self).new(*args)
   end
 
   def self.timer_event(handler, options)
@@ -29,18 +29,18 @@ class OFController
 
   attr_reader :logger
 
-  def initialize(level = Logger::INFO)
+  def initialize(debug = false)
     @switches = {}
     @messages = {}
     @logger = Logger.new($stdout).tap do |logger|
       logger.formatter = proc do |severity, datetime, _progname, msg|
         "#{datetime} (#{severity}) -- #{msg}\n"
       end
-      logger.level = level
+      logger.level = debug ? Logger::DEBUG : Logger::INFO
     end
   end
 
-  def run(ip, port, *args)
+  def run(ip = DEFAULT_IP_ADDRESS, port = DEFAULT_TCP_PORT, *args)
     maybe_send_handler :start, *args
     socket = TCPServer.open(ip, port)
     socket.setsockopt(:SOCKET, :REUSEADDR, true)
