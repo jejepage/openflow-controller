@@ -40,6 +40,10 @@ class OFController
     end
   end
 
+  def eval(input)
+    binding.eval(input)
+  end
+
   def run(ip = DEFAULT_IP_ADDRESS, port = DEFAULT_TCP_PORT, *args)
     maybe_send_handler :start, *args
     socket = TCPServer.open(ip, port)
@@ -50,7 +54,11 @@ class OFController
   end
 
   def datapath_ids
-    @switches.keys
+    @switches.keys.map(&:to_i)
+  end
+
+  def switches
+    @switches.values
   end
 
   def send_message(datapath_id, msg = nil)

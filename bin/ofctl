@@ -4,6 +4,7 @@ require 'readline'
 require_relative '../lib/controller'
 
 PROMPT = '> '
+BYE_MSG = 'Bye!'
 
 command = Cri::Command.define do
   name        'ofctl'
@@ -51,9 +52,18 @@ command = Cri::Command.define do
 
     loop do
       begin
-        puts " => #{eval(Readline.readline(PROMPT, true)).inspect}".green
+        input = Readline.readline(PROMPT, true)
+        if input == 'exit'
+          puts BYE_MSG
+          exit
+        end
+        output = ctl.eval(input).inspect
+        puts " => #{output}".green
       rescue StandardError => e
         puts "#{e.class}: #{e.message}".red
+      rescue SignalException => e
+        puts "\n#{BYE_MSG}"
+        exit
       end
     end
   end

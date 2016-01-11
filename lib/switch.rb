@@ -1,7 +1,7 @@
 require 'openflow-protocol'
 
 class OFSwitch
-  attr_reader :controller
+  attr_reader :controller, :features_reply
 
   def initialize(controller, socket)
     @controller = controller
