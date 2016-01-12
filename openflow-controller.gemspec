@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.homepage     = 'https://github.com/jejepage/openflow-controller'
   s.license      = 'MIT'
 
-  s.add_runtime_dependency 'openflow-protocol', '0.1.6'
+  s.add_runtime_dependency 'openflow-protocol', '0.1.7'
   s.add_runtime_dependency 'colored', '~> 1.2'
   s.add_runtime_dependency 'cri', '~> 2.7'
   s.add_development_dependency 'rspec', '~> 3.2'
