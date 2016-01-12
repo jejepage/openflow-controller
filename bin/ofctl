@@ -13,7 +13,7 @@ command = Cri::Command.define do
   summary     'OpenFlow Controller command-line tool'
   description 'OpenFlow Controller command-line tool'
 
-  flag :h, :help, 'show help for this command' do |value, cmd|
+  flag :h, :help, 'show help for this command' do |_value, cmd|
     puts cmd.help
     exit 0
   end
@@ -62,7 +62,7 @@ command = Cri::Command.define do
         puts " => #{output}".green
       rescue StandardError => e
         puts "#{e.class}: #{e.message}".red
-      rescue SignalException => e
+      rescue SignalException
         puts "\n#{BYE_MSG}"
         exit
       end
