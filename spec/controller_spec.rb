@@ -1,6 +1,6 @@
-describe OpenFlow::Controller::Controller do
+describe Controller do
   before(:all) do
-    class MyCtl < OpenFlow::Controller::Controller
+    class MyCtl < Controller
       attr_reader :start_args
 
       def start(*args)
@@ -8,7 +8,7 @@ describe OpenFlow::Controller::Controller do
       end
     end
 
-    @ctl = OpenFlow::Controller::Controller.create
+    @ctl = Controller.create
     Thread.new { @ctl.run('127.0.0.1', 4242, 'Hello World!', 42) }
   end
 
@@ -25,20 +25,20 @@ describe OpenFlow::Controller::Controller do
     socket = TCPSocket.new '127.0.0.1', 4242
 
     # Exchange Hello messages
-    socket.write OFHello.new.to_binary_s
-    msg = OFParser.read socket
-    expect(msg.class).to be(OFHello)
+    socket.write Hello.new.to_binary_s
+    sleep(0.001)
+    msg = Parser.read socket
+    expect(msg.class).to be(Hello)
 
     # Exchange Echo messages
-    msg = OFParser.read socket
-    expect(msg.class).to be(OFEchoRequest)
-    # socket.write msg.to_reply.to_binary_s
-    socket.write OFEchoReply.new.to_binary_s
+    msg = Parser.read socket
+    expect(msg.class).to be(EchoRequest)
+    socket.write msg.to_reply.to_binary_s
 
     # Exchange Features messages
-    msg = OFParser.read socket
-    expect(msg.class).to be(OFFeaturesRequest)
-    socket.write OFFeaturesReply.new(datapath_id: 1).to_binary_s
+    msg = Parser.read socket
+    expect(msg.class).to be(FeaturesRequest)
+    socket.write FeaturesReply.new(datapath_id: 1).to_binary_s
 
     sleep(0.001)
     expect(@ctl.switches.length).to eq(1)

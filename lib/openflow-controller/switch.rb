@@ -3,6 +3,8 @@ require 'openflow-protocol'
 module OpenFlow
   module Controller
     class Switch
+      include Protocol
+
       attr_reader :controller, :features_reply
 
       def initialize(controller, socket)
@@ -23,7 +25,7 @@ module OpenFlow
       end
 
       def receive
-        OFParser.read @socket
+        Parser.read @socket
       end
 
       def datapath_id
@@ -34,22 +36,22 @@ module OpenFlow
 
       def exchange_hello_messages
         controller.logger.debug 'Wait OFPT_HELLO.'
-        fail unless receive.is_a?(OFHello)
-        send OFHello.new
+        fail unless receive.is_a?(Hello)
+        send Hello.new
       end
 
       def exchange_echo_messages
-        send OFEchoRequest.new
+        send EchoRequest.new
         controller.logger.debug 'Wait OFPT_ECHO_REPLY.'
-        fail unless receive.is_a?(OFEchoReply)
+        fail unless receive.is_a?(EchoReply)
       end
 
       def exchange_features_messages
-        send OFFeaturesRequest.new
+        send FeaturesRequest.new
         controller.logger.debug 'Wait OFPT_FEATURES_REPLY.'
         @features_reply = receive
         controller.logger.debug "OFPT_FEATURES_REPLY.datapath_id: #{datapath_id}."
-        fail unless @features_reply.is_a?(OFFeaturesReply)
+        fail unless @features_reply.is_a?(FeaturesReply)
       end
     end
   end

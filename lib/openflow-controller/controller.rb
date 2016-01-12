@@ -9,6 +9,8 @@ end
 module OpenFlow
   module Controller
     class Controller
+      include Protocol
+
       DEFAULT_IP_ADDRESS = '0.0.0.0'
       DEFAULT_TCP_PORT   = 6633
 
@@ -96,7 +98,7 @@ module OpenFlow
       def message_received(_datapath_id, _msg) end
       def error(_datapath_id, _msg) end
       def echo_request(datapath_id, msg)
-        send_message datapath_id, OFEchoReply.new(xid: msg.xid)
+        send_message datapath_id, EchoReply.new(xid: msg.xid)
       end
       def packet_in(_datapath_id, _msg) end
       def port_add(_datapath_id, _msg) end
@@ -158,22 +160,22 @@ module OpenFlow
       def handle_openflow_message(datapath_id)
         msg = @switches.fetch(datapath_id.to_s).receive
 
-        unless msg.class == OFEchoRequest
+        unless msg.class == EchoRequest
           logger.debug "Switch #{datapath_id} received #{msg.type} message."
           @messages[datapath_id.to_s] << msg
           maybe_send_handler :message_received, datapath_id, msg
         end
 
         case msg
-        when OFError
+        when Error
           maybe_send_handler :error, datapath_id, msg
-        when OFEchoRequest
+        when EchoRequest
           maybe_send_handler :echo_request, datapath_id, msg
-        when OFFeaturesReply
+        when FeaturesReply
           maybe_send_handler :features_reply, datapath_id, msg
-        when OFPacketIn
+        when PacketIn
           maybe_send_handler :packet_in, datapath_id, msg
-        when OFPortStatus
+        when PortStatus
           case msg.reason
           when :add
             maybe_send_handler :port_add, datapath_id, msg
@@ -183,7 +185,7 @@ module OpenFlow
             maybe_send_handler :port_modify, datapath_id, msg
           # else
           end
-        when OFFlowRemoved
+        when FlowRemoved
           maybe_send_handler :flow_removed, datapath_id, msg
         # else
         end
