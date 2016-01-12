@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 require 'cri'
 require 'readline'
-require_relative '../lib/controller'
+$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
+require 'openflow-controller'
 
 PROMPT = '> '
 BYE_MSG = 'Bye!'
@@ -27,7 +28,7 @@ command = Cri::Command.define do
 
     debug = opts[:debug] || false
 
-    ctl = OFController.create(debug)
+    ctl = OpenFlow::Controller::Controller.create(debug)
 
     init_form = ctl.logger.formatter
     ctl.logger.formatter = proc do |severity, datetime, progname, msg|
@@ -37,8 +38,8 @@ command = Cri::Command.define do
       buf
     end
 
-    ip   = opts[:ip]   || OFController::DEFAULT_IP_ADDRESS
-    port = opts[:port] || OFController::DEFAULT_TCP_PORT
+    ip   = opts[:ip]   || OpenFlow::Controller::Controller::DEFAULT_IP_ADDRESS
+    port = opts[:port] || OpenFlow::Controller::Controller::DEFAULT_TCP_PORT
 
     Thread.abort_on_exception = true
     Thread.new do

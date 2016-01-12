@@ -1,4 +1,5 @@
-require_relative 'lib/openflow-controller/version'
+$LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
+require 'openflow-controller/version'
 
 Gem::Specification.new do |s|
   s.name         = 'openflow-controller'

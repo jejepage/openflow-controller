@@ -1,8 +1,6 @@
-require 'spec_helper'
-
-describe OFController do
+describe OpenFlow::Controller::Controller do
   before(:all) do
-    class MyCtl < OFController
+    class MyCtl < OpenFlow::Controller::Controller
       attr_reader :start_args
 
       def start(*args)
@@ -10,7 +8,7 @@ describe OFController do
       end
     end
 
-    @ctl = OFController.create
+    @ctl = OpenFlow::Controller::Controller.create
     Thread.new { @ctl.run('127.0.0.1', 4242, 'Hello World!', 42) }
   end
 

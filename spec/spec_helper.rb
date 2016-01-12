@@ -1,1 +1,1 @@
-require_relative '../lib/openflow-controller'
+require 'openflow-controller'
