@@ -18,6 +18,7 @@ describe Controller do
   end
 
   it 'should handle start' do
+    sleep(0.001)
     expect(@ctl.start_args).to eq(['Hello World!', 42])
   end
 
