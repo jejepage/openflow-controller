@@ -54,17 +54,18 @@ command = Cri::Command.define do
     loop do
       begin
         input = Readline.readline(PROMPT, true)
-        if input == 'exit'
+        if input.nil? || input == 'exit'
+          puts if input.nil?
           puts BYE_MSG
           exit
         end
         output = ctl.eval(input).inspect
         puts " => #{output}".green
-      rescue StandardError => e
+      rescue StandardError, SyntaxError => e
         puts "#{e.class}: #{e.message}".red
+        puts e.backtrace.join("\n\t").red
       rescue SignalException
-        puts "\n#{BYE_MSG}"
-        exit
+        puts
       end
     end
   end
