@@ -43,7 +43,7 @@ class FDB
   end
 end
 
-class LearningSwitch < OFController
+class LearningSwitch < OpenFlow::Controller::Controller
   timer_event :age_fdb, interval: 5.sec
 
   def start(_argv)

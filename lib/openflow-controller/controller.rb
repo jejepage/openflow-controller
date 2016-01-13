@@ -10,6 +10,7 @@ module OpenFlow
   module Controller
     class Controller
       include Protocol
+      include PacketProtocols
 
       DEFAULT_IP_ADDRESS = '0.0.0.0'
       DEFAULT_TCP_PORT   = 6633
@@ -18,8 +19,12 @@ module OpenFlow
         @controller_class = subclass
       end
 
-      def self.create(*args)
-        (@controller_class || self).new(*args)
+      def self.create
+        @instance = (@controller_class || self).new
+      end
+
+      def self.instance
+        @instance
       end
 
       def self.timer_event(handler, options)
@@ -33,19 +38,23 @@ module OpenFlow
 
       attr_reader :logger
 
-      def initialize(debug = false)
+      def initialize
         @switches = {}
         @messages = {}
         @logger = Logger.new($stdout).tap do |logger|
           logger.formatter = proc do |severity, datetime, _progname, msg|
             "#{datetime} (#{severity}) -- #{msg}\n"
           end
-          logger.level = debug ? Logger::DEBUG : Logger::INFO
+          logger.level = Logger::INFO
         end
       end
 
-      def eval(input)
-        binding.eval(input)
+      def set_debug
+        @logger.level = Logger::DEBUG
+      end
+
+      def get_binding
+        binding
       end
 
       def run(ip = DEFAULT_IP_ADDRESS, port = DEFAULT_TCP_PORT, *args)
