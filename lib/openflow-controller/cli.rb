@@ -63,6 +63,7 @@ module OpenFlow
             exit 0
           end
           flag :d, :debug, 'run controller in debug mode'
+          flag :n, :no_prompt, 'no prompt'
 
           option :i, :ip,         'IP address of the controller',  argument: :optional
           option :p, :port,       'port number of the controller', argument: :optional
@@ -74,19 +75,25 @@ module OpenFlow
             ctl = Controller.create
             ctl.set_debug if opts[:debug]
 
-            init_form = ctl.logger.formatter
-            ctl.logger.formatter = proc do |severity, datetime, progname, msg|
-              buf = PROMPT + Readline::line_buffer
-              "\r" + ' ' * buf.length + "\r" +
-              init_form.call(severity, datetime, progname, msg).blue +
-              buf
+            unless opts[:no_prompt]
+              init_form = ctl.logger.formatter
+              ctl.logger.formatter = proc do |severity, datetime, progname, msg|
+                buf = PROMPT + Readline::line_buffer
+                "\r" + ' ' * buf.length + "\r" +
+                init_form.call(severity, datetime, progname, msg).blue +
+                buf
+              end
             end
 
             ip   = opts[:ip]   || Controller::DEFAULT_IP_ADDRESS
             port = opts[:port] || Controller::DEFAULT_TCP_PORT
 
             CLI.run_controller_on_thread ctl, ip, port, args
-            CLI.run_cli ctl
+            if opts[:no_prompt]
+              loop {}
+            else
+              CLI.run_cli ctl
+            end
           end
         end
       end
